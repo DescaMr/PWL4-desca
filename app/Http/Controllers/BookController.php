@@ -5,7 +5,11 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Book;
 use App\Models\Bookshelf;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\BooksExport;
+use App\Imports\BooksImport;
 use PDF;
+
 
 class BookController extends Controller
 {
@@ -110,5 +114,23 @@ class BookController extends Controller
         $pdf = PDF::loadview('books.print', ['books' => $books]);
         return $pdf->download('data_buku.pdf');
     }
+    public function export()
+    {
+        return Excel::download(new BooksExport, 'books.xlsx');
+    }
 
+    public function import(Request $req)
+    {
+        $req->validate([
+            'file' => 'required|max:10000|mimes:xlsx,xls',
+        ]);
+
+        Excel::import(new BooksImport, $req->file('file'));
+
+        $notification = array(
+            'message' => 'Import data berhasil dilakukan',
+            'alert-type' => 'success'
+        );
+        return redirect()->route('book')->with($notification);
+    }
 }
